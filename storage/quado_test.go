@@ -7,26 +7,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func initQuado(t *testing.T) *Storage {
-	storage := newStorage(createTestConfig(t))
-	var err error
-
-	if err = storage.open(); err != nil {
-		t.Errorf("Opening failed")
-	}
-
-	if err = storage.createBucket(QUADO_BUCKET); err != nil {
-		t.Errorf("Bucket creation failed: %s", QUADO_BUCKET)
-	}
-
-	return storage
-}
-
 func TestPutQuado(t *testing.T) {
-	storage := initQuado(t)
-	quado := newQuado(newList(newBoard().ID, "").ID, "test", "desc", time.Now())
+	storage := createTestStorage(t)
+	quado := storage.NewQuado(storage.NewList(storage.NewBoard().ID, "").ID, "test", "desc", time.Now())
 
-	if err := putQuado(quado, storage); err != nil {
+	if err := storage.PutQuado(quado); err != nil {
 		t.Errorf("Quado insertion in bucket failed: %s", quado.ID)
 	}
 	log.WithFields(log.Fields{
@@ -35,9 +20,9 @@ func TestPutQuado(t *testing.T) {
 		"title":  quado.Title,
 		"desc":   quado.Description,
 		"date":   quado.Date,
-	}).Info("New quado")
+	}).Trace("New quado")
 
-	size := bucketSize(QUADO_BUCKET, storage)
+	size := storage.bucketSize(QUADO_BUCKET)
 	if size != 1 {
 		t.Errorf("Quado bucket size error: %v", size)
 	}
@@ -46,15 +31,15 @@ func TestPutQuado(t *testing.T) {
 }
 
 func TestGetQuado(t *testing.T) {
-	storage := initQuado(t)
-	quado := newQuado(newList(newBoard().ID, "").ID, "test", "desc", time.Now())
+	storage := createTestStorage(t)
+	quado := storage.NewQuado(storage.NewList(storage.NewBoard().ID, "").ID, "test", "desc", time.Now())
 
-	if err := putQuado(quado, storage); err != nil {
+	if err := storage.PutQuado(quado); err != nil {
 		t.Errorf("Quado insertion in bucket failed: %s", quado.ID)
 	}
-	log.WithField("id", quado.ID).Info("New quado")
+	log.WithField("id", quado.ID).Trace("New quado")
 
-	resQuado, err := getQuado(quado.ID, storage)
+	resQuado, err := storage.GetQuado(quado.ID)
 	if err != nil {
 		t.Errorf("Quado retreiving failed: %s", quado.ID)
 	}
@@ -67,9 +52,9 @@ func TestGetQuado(t *testing.T) {
 		"title":  resQuado.Title,
 		"desc":   resQuado.Description,
 		"date":   resQuado.Date,
-	}).Info("Retreiving quado")
+	}).Trace("Retreiving quado")
 
-	size := bucketSize(QUADO_BUCKET, storage)
+	size := storage.bucketSize(QUADO_BUCKET)
 	if size != 1 {
 		t.Errorf("Quado bucket size error: %v", size)
 	}
@@ -78,15 +63,15 @@ func TestGetQuado(t *testing.T) {
 }
 
 func TestUpdateQuado(t *testing.T) {
-	storage := initQuado(t)
-	quado := newQuado(newList(newBoard().ID, "").ID, "test", "desc", time.Now())
+	storage := createTestStorage(t)
+	quado := storage.NewQuado(storage.NewList(storage.NewBoard().ID, "").ID, "test", "desc", time.Now())
 
-	if err := putQuado(quado, storage); err != nil {
+	if err := storage.PutQuado(quado); err != nil {
 		t.Errorf("Quado insertion in bucket failed: %s", quado.ID)
 	}
-	log.WithField("id", quado.ID).Info("New quado")
+	log.WithField("id", quado.ID).Trace("New quado")
 
-	resQuado, err := getQuado(quado.ID, storage)
+	resQuado, err := storage.GetQuado(quado.ID)
 	if err != nil {
 		t.Errorf("Quado retreiving failed: %s", quado.ID)
 	}
@@ -99,21 +84,21 @@ func TestUpdateQuado(t *testing.T) {
 		"title":  resQuado.Title,
 		"desc":   resQuado.Description,
 		"date":   resQuado.Date,
-	}).Info("Retreiving quado")
+	}).Trace("Retreiving quado")
 
-	size := bucketSize(QUADO_BUCKET, storage)
+	size := storage.bucketSize(QUADO_BUCKET)
 	if size != 1 {
 		t.Errorf("Quado bucket size error: %v", size)
 	}
 
 	quado.Title = "test_modify"
 
-	if err := putQuado(quado, storage); err != nil {
+	if err := storage.PutQuado(quado); err != nil {
 		t.Errorf("Quado insertion in bucket failed: %s", quado.ID)
 	}
-	log.WithField("id", quado.ID).Info("Update quado")
+	log.WithField("id", quado.ID).Trace("Update quado")
 
-	resQuado, err = getQuado(quado.ID, storage)
+	resQuado, err = storage.GetQuado(quado.ID)
 	if err != nil {
 		t.Errorf("Quado retreiving failed: %s", quado.ID)
 	}
@@ -126,9 +111,9 @@ func TestUpdateQuado(t *testing.T) {
 		"title":  resQuado.Title,
 		"desc":   resQuado.Description,
 		"date":   resQuado.Date,
-	}).Info("Retreiving quado")
+	}).Trace("Retreiving quado")
 
-	size = bucketSize(QUADO_BUCKET, storage)
+	size = storage.bucketSize(QUADO_BUCKET)
 	if size != 1 {
 		t.Errorf("Quado bucket size error: %v", size)
 	}
@@ -137,25 +122,25 @@ func TestUpdateQuado(t *testing.T) {
 }
 
 func TestDeleteQuado(t *testing.T) {
-	storage := initQuado(t)
-	quado := newQuado(newList(newBoard().ID, "").ID, "test", "desc", time.Now())
+	storage := createTestStorage(t)
+	quado := storage.NewQuado(storage.NewList(storage.NewBoard().ID, "").ID, "test", "desc", time.Now())
 
-	if err := putQuado(quado, storage); err != nil {
+	if err := storage.PutQuado(quado); err != nil {
 		t.Errorf("Quado insertion in bucket failed: %s", quado.ID)
 	}
-	log.WithField("id", quado.ID).Info("New quado")
+	log.WithField("id", quado.ID).Trace("New quado")
 
-	size := bucketSize(QUADO_BUCKET, storage)
+	size := storage.bucketSize(QUADO_BUCKET)
 	if size != 1 {
 		t.Errorf("Quado bucket size error: %v", size)
 	}
 
-	if err := deleteQuado(quado, storage); err != nil {
+	if err := storage.DeleteQuado(quado); err != nil {
 		t.Errorf("Quado deletion failed: %s", quado.ID)
 	}
-	log.WithField("id", quado.ID).Info("Deleting quado")
+	log.WithField("id", quado.ID).Trace("Deleting quado")
 
-	size = bucketSize(QUADO_BUCKET, storage)
+	size = storage.bucketSize(QUADO_BUCKET)
 	if size != 0 {
 		t.Errorf("Quado bucket size error: %v", size)
 	}

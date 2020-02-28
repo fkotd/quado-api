@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	log "github.com/sirupsen/logrus"
+	bolt "go.etcd.io/bbolt"
 )
 
 func createTestConfig(t *testing.T) *Config {
@@ -13,71 +14,107 @@ func createTestConfig(t *testing.T) *Config {
 	if err != nil {
 		t.Errorf("Temp file creation failed")
 	}
-	log.Warn("Creating temp db")
+	log.Trace("Creating temp db")
 
 	path := f.Name()
 	f.Close()
 	os.Remove(path)
 
-	return &Config{path, 0600}
+	return NewConfig(path, 0600)
+}
+
+func createTestStorage(t *testing.T) *Storage {
+	storage := NewStorage(createTestConfig(t))
+	var err error
+
+	if err = storage.Open(); err != nil {
+		t.Errorf("Opening failed")
+	}
+
+	if err = storage.createBucket(BOARD_BUCKET); err != nil {
+		t.Errorf("Bucket creation failed: %s", BOARD_BUCKET)
+	}
+
+	if err = storage.createBucket(LIST_BUCKET); err != nil {
+		t.Errorf("Bucket creation failed: %s", LIST_BUCKET)
+	}
+
+	if err = storage.createBucket(QUADO_BUCKET); err != nil {
+		t.Errorf("Bucket creation failed: %s", QUADO_BUCKET)
+	}
+
+	return storage
 }
 
 func destroyTestStorage(s *Storage, t *testing.T) {
 	defer os.Remove(s.db.Path())
+
 	err := s.db.Close()
 	if err != nil {
 		t.Errorf("Destroying failed")
 	}
-	log.Warn("Removing temp db")
 
+	log.Trace("Removing temp db")
+}
+
+func (storage *Storage) bucketSize(name string) (size int) {
+	storage.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(name))
+
+		cursor := bucket.Cursor()
+
+		for key, _ := cursor.First(); key != nil; key, _ = cursor.Next() {
+			size++
+		}
+
+		return nil
+	})
+	return
 }
 
 func TestOpen(t *testing.T) {
-	storage := newStorage(createTestConfig(t))
+	storage := NewStorage(createTestConfig(t))
 
-	err := storage.open()
+	err := storage.Open()
 	if err != nil {
 		t.Errorf("Opening failed")
 	}
-	log.Info("Opening db")
+	log.Trace("Opening db")
 
 	destroyTestStorage(storage, t)
 }
 
 func TestClose(t *testing.T) {
-	storage := newStorage(createTestConfig(t))
+	storage := NewStorage(createTestConfig(t))
 
-	err := storage.open()
+	err := storage.Open()
 	if err != nil {
 		t.Errorf("Opening failed")
 	}
 
-	err = storage.close()
+	err = storage.Close()
 	if err != nil {
 		t.Errorf("Closing failed")
 	}
-	log.Info("Closing db")
+	log.Trace("Closing db")
 
 	destroyTestStorage(storage, t)
 }
 
 func TestCreateBoardBucket(t *testing.T) {
-	storage := newStorage(createTestConfig(t))
+	storage := NewStorage(createTestConfig(t))
 	var err error
 
-	if err = storage.open(); err != nil {
+	if err = storage.Open(); err != nil {
 		t.Errorf("Opening failed")
 	}
 
-	buckets := [3]string{BOARD_BUCKET, LIST_BUCKET, QUADO_BUCKET}
-	for _, bucket := range buckets {
-		if err = storage.createBucket(bucket); err != nil {
-			t.Errorf("Bucket creation failed: %s", bucket)
-		}
-		log.WithField("bucket", bucket).Info("Creating bucket")
+	if err = storage.InitBuckets(); err != nil {
+		t.Errorf("Bucket creation failed")
 	}
+	log.Trace("Creating buckets")
 
-	if err = storage.close(); err != nil {
+	if err = storage.Close(); err != nil {
 		t.Errorf("Closing failed")
 	}
 
