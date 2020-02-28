@@ -13,38 +13,63 @@ type List struct {
 	Title   string
 }
 
-func newList(boardID string, title string) *List {
+func (storage *Storage) NewList(boardID string, title string) *List {
 	return &List{uuid.NewV4().String(), boardID, title}
 }
 
-func putList(list *List, s *Storage) error {
-	return s.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(LIST_BUCKET))
+func (storage *Storage) PutList(list *List) error {
+	return storage.db.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(LIST_BUCKET))
 
 		json, err := json.Marshal(list)
 		if err != nil {
 			return err
 		}
 
-		return b.Put([]byte(list.ID), json)
+		return bucket.Put([]byte(list.ID), json)
 	})
 }
 
-func getList(id string, s *Storage) (list *List, err error) {
-	err = s.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(LIST_BUCKET))
+func (storage *Storage) GetList(id string) (list *List, err error) {
+	err = storage.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(LIST_BUCKET))
 
-		listByte := b.Get([]byte(id))
+		listByte := bucket.Get([]byte(id))
 
 		return json.Unmarshal(listByte, &list)
 	})
 	return
 }
 
-func deleteList(list *List, s *Storage) error {
-	return s.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(LIST_BUCKET))
+func (storage *Storage) DeleteList(list *List) error {
+	return storage.db.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(LIST_BUCKET))
 
-		return b.Delete([]byte(list.ID))
+		return bucket.Delete([]byte(list.ID))
 	})
+}
+
+func (storage *Storage) deleteList(list *List, tx *bolt.Tx) error {
+	quadoBucket := tx.Bucket([]byte(QUADO_BUCKET))
+
+	err := quadoBucket.ForEach(func(key, value []byte) error {
+		var quado Quado
+		if err := json.Unmarshal(value, &quado); err != nil {
+			return err
+		}
+		if quado.ListID == list.ID {
+			if err := storage.deleteQuado(&quado, tx); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	bucketList := tx.Bucket([]byte(LIST_BUCKET))
+	bucketList.Delete([]byte(list.ID))
+
+	return nil
 }

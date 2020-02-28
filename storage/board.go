@@ -8,41 +8,67 @@ import (
 )
 
 type Board struct {
-	ID string
+	ID string `json:"id"`
 }
 
-func newBoard() *Board {
+func (storage *Storage) NewBoard() *Board {
 	return &Board{uuid.NewV4().String()}
 }
 
-func putBoard(board *Board, s *Storage) error {
-	return s.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(BOARD_BUCKET))
+func (storage *Storage) PutBoard(board *Board) error {
+	return storage.db.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(BOARD_BUCKET))
 
 		json, err := json.Marshal(board)
 		if err != nil {
 			return err
 		}
 
-		return b.Put([]byte(board.ID), json)
+		return bucket.Put([]byte(board.ID), json)
 	})
 }
 
-func getBoard(id string, s *Storage) (board *Board, err error) {
-	err = s.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(BOARD_BUCKET))
+func (storage *Storage) GetBoard(id string) (board *Board, err error) {
+	err = storage.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(BOARD_BUCKET))
 
-		boardByte := b.Get([]byte(id))
+		boardByte := bucket.Get([]byte(id))
 
 		return json.Unmarshal(boardByte, &board)
 	})
 	return
 }
 
-func deleteBoard(board *Board, s *Storage) error {
-	return s.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(BOARD_BUCKET))
+func (storage *Storage) DeleteBoard(board *Board) error {
+	tx, err := storage.db.Begin(true)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
 
-		return b.Delete([]byte(board.ID))
+	listBucket := tx.Bucket([]byte(LIST_BUCKET))
+
+	err = listBucket.ForEach(func(key, value []byte) error {
+		var list List
+		if err := json.Unmarshal(value, &list); err != nil {
+			return err
+		}
+		if list.BoardID == board.ID {
+			if err := storage.deleteList(&list, tx); err != nil {
+				return err
+			}
+		}
+		return nil
 	})
+	if err != nil {
+		return err
+	}
+
+	boardBucket := tx.Bucket([]byte(BOARD_BUCKET))
+	boardBucket.Delete([]byte(board.ID))
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	return nil
 }

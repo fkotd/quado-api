@@ -16,38 +16,44 @@ type Quado struct {
 	Date        time.Time
 }
 
-func newQuado(listID string, title string, description string, date time.Time) *Quado {
+func (storage *Storage) NewQuado(listID string, title string, description string, date time.Time) *Quado {
 	return &Quado{uuid.NewV4().String(), listID, title, description, date}
 }
 
-func putQuado(quado *Quado, s *Storage) error {
-	return s.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(QUADO_BUCKET))
+func (storage *Storage) PutQuado(quado *Quado) error {
+	return storage.db.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(QUADO_BUCKET))
 
 		json, err := json.Marshal(quado)
 		if err != nil {
 			return err
 		}
 
-		return b.Put([]byte(quado.ID), json)
+		return bucket.Put([]byte(quado.ID), json)
 	})
 }
 
-func getQuado(id string, s *Storage) (quado *Quado, err error) {
-	err = s.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(QUADO_BUCKET))
+func (storage *Storage) GetQuado(id string) (quado *Quado, err error) {
+	err = storage.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(QUADO_BUCKET))
 
-		quadoByte := b.Get([]byte(id))
+		quadoByte := bucket.Get([]byte(id))
 
 		return json.Unmarshal(quadoByte, &quado)
 	})
 	return
 }
 
-func deleteQuado(quado *Quado, s *Storage) error {
-	return s.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(QUADO_BUCKET))
+func (storage *Storage) DeleteQuado(quado *Quado) error {
+	return storage.db.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(QUADO_BUCKET))
 
-		return b.Delete([]byte(quado.ID))
+		return bucket.Delete([]byte(quado.ID))
 	})
+}
+
+func (storage *Storage) deleteQuado(quado *Quado, tx *bolt.Tx) error {
+	bucket := tx.Bucket([]byte(QUADO_BUCKET))
+
+	return bucket.Delete([]byte(quado.ID))
 }
