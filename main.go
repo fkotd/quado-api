@@ -24,6 +24,8 @@ func setupRouter() *gin.Engine {
 	router.POST("/boards", handler.CreateBoard)
 	router.DELETE("/boards/:id", handler.DeleteBoard)
 
+	router.POST("/lists", handler.CreateList)
+
 	return router
 }
 

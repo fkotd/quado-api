@@ -8,9 +8,9 @@ import (
 )
 
 type List struct {
-	ID      string
-	BoardID string
-	Title   string
+	ID      string `json:"id"`
+	BoardID string `json:"board-id" binding:"required"`
+	Title   string `json:"title"`
 }
 
 func (storage *Storage) NewList(boardID string, title string) *List {
