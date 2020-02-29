@@ -22,9 +22,13 @@ func setupRouter() *gin.Engine {
 	storage.InitBuckets()
 
 	router.POST("/boards", handler.CreateBoard)
-	router.DELETE("/boards/:id", handler.DeleteBoard)
+	router.DELETE("/boards/:id", handler.RemoveBoard)
 
 	router.POST("/lists", handler.CreateList)
+	router.DELETE("/lists/:id", handler.RemoveList)
+
+	router.POST("/quados", handler.CreateQuado)
+	router.DELETE("/quados/:id", handler.RemoveQuado)
 
 	return router
 }

@@ -9,7 +9,7 @@ import (
 
 type List struct {
 	ID      string `json:"id"`
-	BoardID string `json:"board-id" binding:"required"`
+	BoardID string `json:"idBoard" binding:"required"`
 	Title   string `json:"title"`
 }
 
@@ -43,9 +43,10 @@ func (storage *Storage) GetList(id string) (list *List, err error) {
 
 func (storage *Storage) DeleteList(list *List) error {
 	return storage.db.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(LIST_BUCKET))
-
-		return bucket.Delete([]byte(list.ID))
+		if err := storage.deleteList(list, tx); err != nil {
+			return err
+		}
+		return nil
 	})
 }
 

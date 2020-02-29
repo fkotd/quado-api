@@ -9,11 +9,11 @@ import (
 )
 
 type Quado struct {
-	ID          string
-	ListID      string
-	Title       string
-	Description string
-	Date        time.Time
+	ID          string    `json:"id"`
+	ListID      string    `json:"idList" binding:"required"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Date        time.Time `json:"date"`
 }
 
 func (storage *Storage) NewQuado(listID string, title string, description string, date time.Time) *Quado {

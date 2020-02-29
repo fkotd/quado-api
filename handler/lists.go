@@ -4,21 +4,33 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 )
 
-func (handler *Handler) CreateList(c *gin.Context) {
-	boardID := c.PostForm("board-id")
-	title := c.PostForm("title")
+func (handler *Handler) CreateList(context *gin.Context) {
+	boardID := context.PostForm("idBoard")
+	title := context.PostForm("title")
 
 	list := handler.storage.NewList(boardID, title)
-	log.WithFields(log.Fields{
-		"id":       list.ID,
-		"board-id": list.BoardID,
-		"title":    list.Title,
-	}).Warn("List")
 
 	handler.storage.PutList(list)
 
-	c.JSON(http.StatusOK, list)
+	context.JSON(http.StatusOK, list)
+}
+
+func (handler *Handler) RemoveList(context *gin.Context) {
+	listID := context.Param("id")
+
+	list, err := handler.storage.GetList(listID)
+	if err != nil {
+		context.Status(http.StatusInternalServerError)
+		return
+	}
+
+	err = handler.storage.DeleteList(list)
+	if err != nil {
+		context.Status(http.StatusInternalServerError)
+		return
+	}
+
+	context.Status(http.StatusOK)
 }
