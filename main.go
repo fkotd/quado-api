@@ -11,7 +11,7 @@ func setupRouter() *gin.Engine {
 	router := gin.Default()
 
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost"}
+	config.AllowOrigins = []string{"http://localhost:8080"}
 	router.Use(cors.New(config))
 
 	storage := storage.NewStorage(storage.NewConfig("quado.db", 0600))
@@ -24,7 +24,7 @@ func setupRouter() *gin.Engine {
 	router.POST("/boards", handler.CreateBoard)
 	router.DELETE("/boards/:id", handler.RemoveBoard)
 
-	router.POST("/lists", handler.CreateList)
+	router.POST("/boards/:id/lists", handler.CreateList)
 	router.DELETE("/lists/:id", handler.RemoveList)
 
 	router.POST("/quados", handler.CreateQuado)
@@ -37,5 +37,5 @@ func main() {
 
 	r := setupRouter()
 
-	r.Run(":8080")
+	r.Run(":3333")
 }

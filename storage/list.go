@@ -9,7 +9,7 @@ import (
 
 type List struct {
 	ID      string `json:"id"`
-	BoardID string `json:"idBoard" binding:"required"`
+	BoardID string `json:"boardID" binding:"required"`
 	Title   string `json:"title"`
 }
 

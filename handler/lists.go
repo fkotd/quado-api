@@ -4,13 +4,34 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 )
 
-func (handler *Handler) CreateList(context *gin.Context) {
-	boardID := context.PostForm("idBoard")
-	title := context.PostForm("title")
+type TitleJSON struct {
+	Title string `json:"title"`
+}
 
-	list := handler.storage.NewList(boardID, title)
+func (handler *Handler) CreateList(context *gin.Context) {
+	boardID := context.Param("id")
+
+	var titleJSON TitleJSON
+	if err := context.ShouldBindJSON(&titleJSON); err != nil {
+		context.Status(http.StatusBadRequest)
+		return
+	}
+
+	log.SetLevel(log.DebugLevel)
+	log.WithFields(log.Fields{
+		"idBoard": boardID,
+		"title":   titleJSON.Title,
+	}).Debug("A walrus appears")
+
+	if _, err := handler.storage.GetBoard(boardID); err != nil {
+		context.Status(http.StatusBadRequest)
+		return
+	}
+
+	list := handler.storage.NewList(boardID, titleJSON.Title)
 
 	handler.storage.PutList(list)
 
