@@ -8,13 +8,25 @@ import (
 )
 
 type List struct {
-	ID      string `json:"id"`
-	BoardID string `json:"boardID" binding:"required"`
+	Id      string `json:"id"`
+	BoardId string `json:"boardId" binding:"required"`
 	Title   string `json:"title"`
 }
 
-func (storage *Storage) NewList(boardID string, title string) *List {
-	return &List{uuid.NewV4().String(), boardID, title}
+type ListResult struct {
+	Id      string        `json:"id"`
+	BoardId string        `json:"boardId"`
+	Title   string        `json:"title"`
+	Quados  []QuadoResult `json:"quados"`
+}
+
+func (storage *Storage) NewList(boardId string, title string) *List {
+	return &List{uuid.NewV4().String(), boardId, title}
+}
+
+func (storage *Storage) NewListResult(list *List) *ListResult {
+	var quados []QuadoResult
+	return &ListResult{list.Id, list.BoardId, list.Title, quados}
 }
 
 func (storage *Storage) PutList(list *List) error {
@@ -26,7 +38,7 @@ func (storage *Storage) PutList(list *List) error {
 			return err
 		}
 
-		return bucket.Put([]byte(list.ID), json)
+		return bucket.Put([]byte(list.Id), json)
 	})
 }
 
@@ -39,6 +51,42 @@ func (storage *Storage) GetList(id string) (list *List, err error) {
 		return json.Unmarshal(listByte, &list)
 	})
 	return
+}
+
+func (storage *Storage) GetLists(boardId string) (lists []ListResult, err error) {
+	tx, err := storage.db.Begin(true)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	listBucket := tx.Bucket([]byte(LIST_BUCKET))
+
+	err = listBucket.ForEach(func(key, value []byte) error {
+		var list List
+
+		if err := json.Unmarshal(value, &list); err != nil {
+			return err
+		}
+
+		if list.BoardId == boardId {
+			quados, err := storage.getQuados(list.Id, tx)
+			if err != nil {
+				return err
+			}
+			listResult := ListResult{list.Id, boardId, list.Title, quados}
+			lists = append(lists, listResult)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return lists, nil
 }
 
 func (storage *Storage) DeleteList(list *List) error {
@@ -55,10 +103,12 @@ func (storage *Storage) deleteList(list *List, tx *bolt.Tx) error {
 
 	err := quadoBucket.ForEach(func(key, value []byte) error {
 		var quado Quado
+
 		if err := json.Unmarshal(value, &quado); err != nil {
 			return err
 		}
-		if quado.ListID == list.ID {
+
+		if quado.ListId == list.Id {
 			if err := storage.deleteQuado(&quado, tx); err != nil {
 				return err
 			}
@@ -70,7 +120,7 @@ func (storage *Storage) deleteList(list *List, tx *bolt.Tx) error {
 	}
 
 	bucketList := tx.Bucket([]byte(LIST_BUCKET))
-	bucketList.Delete([]byte(list.ID))
+	bucketList.Delete([]byte(list.Id))
 
 	return nil
 }

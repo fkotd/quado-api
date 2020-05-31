@@ -22,12 +22,15 @@ func setupRouter() *gin.Engine {
 	storage.InitBuckets()
 
 	router.POST("/boards", handler.CreateBoard)
+	// TODO: Use this route instead GetLists ?
+	// router.GET("/boards/:id", handler.GetBoard)
 	router.DELETE("/boards/:id", handler.RemoveBoard)
 
 	router.POST("/boards/:id/lists", handler.CreateList)
+	router.GET("/boards/:id/lists", handler.GetLists)
 	router.DELETE("/lists/:id", handler.RemoveList)
 
-	router.POST("/quados", handler.CreateQuado)
+	router.POST("/lists/:id/quados", handler.CreateQuado)
 	router.DELETE("/quados/:id", handler.RemoveQuado)
 
 	return router

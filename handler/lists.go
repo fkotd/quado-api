@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 )
 
 type TitleJSON struct {
@@ -12,7 +11,7 @@ type TitleJSON struct {
 }
 
 func (handler *Handler) CreateList(context *gin.Context) {
-	boardID := context.Param("id")
+	boardId := context.Param("id")
 
 	var titleJSON TitleJSON
 	if err := context.ShouldBindJSON(&titleJSON); err != nil {
@@ -20,28 +19,34 @@ func (handler *Handler) CreateList(context *gin.Context) {
 		return
 	}
 
-	log.SetLevel(log.DebugLevel)
-	log.WithFields(log.Fields{
-		"idBoard": boardID,
-		"title":   titleJSON.Title,
-	}).Debug("A walrus appears")
-
-	if _, err := handler.storage.GetBoard(boardID); err != nil {
+	if _, err := handler.storage.GetBoard(boardId); err != nil {
 		context.Status(http.StatusBadRequest)
 		return
 	}
 
-	list := handler.storage.NewList(boardID, titleJSON.Title)
-
+	list := handler.storage.NewList(boardId, titleJSON.Title)
 	handler.storage.PutList(list)
 
-	context.JSON(http.StatusOK, list)
+	listResult := handler.storage.NewListResult(list)
+	context.JSON(http.StatusOK, listResult)
+}
+
+func (handler *Handler) GetLists(context *gin.Context) {
+	boardId := context.Param("id")
+
+	lists, err := handler.storage.GetLists(boardId)
+	if err != nil {
+		context.Status(http.StatusInternalServerError)
+		return
+	}
+
+	context.JSON(http.StatusOK, gin.H{"lists": lists})
 }
 
 func (handler *Handler) RemoveList(context *gin.Context) {
-	listID := context.Param("id")
+	listId := context.Param("id")
 
-	list, err := handler.storage.GetList(listID)
+	list, err := handler.storage.GetList(listId)
 	if err != nil {
 		context.Status(http.StatusInternalServerError)
 		return

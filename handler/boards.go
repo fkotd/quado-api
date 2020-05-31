@@ -15,9 +15,9 @@ func (handler *Handler) CreateBoard(context *gin.Context) {
 }
 
 func (handler *Handler) RemoveBoard(context *gin.Context) {
-	boardID := context.Param("id")
+	boardId := context.Param("id")
 
-	board, err := handler.storage.GetBoard(boardID)
+	board, err := handler.storage.GetBoard(boardId)
 	if err != nil {
 		context.Status(http.StatusInternalServerError)
 		return

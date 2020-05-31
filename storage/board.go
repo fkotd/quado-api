@@ -8,7 +8,7 @@ import (
 )
 
 type Board struct {
-	ID string `json:"id"`
+	Id string `json:"id"`
 }
 
 func (storage *Storage) NewBoard() *Board {
@@ -24,7 +24,7 @@ func (storage *Storage) PutBoard(board *Board) error {
 			return err
 		}
 
-		return bucket.Put([]byte(board.ID), json)
+		return bucket.Put([]byte(board.Id), json)
 	})
 }
 
@@ -50,10 +50,12 @@ func (storage *Storage) DeleteBoard(board *Board) error {
 
 	err = listBucket.ForEach(func(key, value []byte) error {
 		var list List
+
 		if err := json.Unmarshal(value, &list); err != nil {
 			return err
 		}
-		if list.BoardID == board.ID {
+
+		if list.BoardId == board.Id {
 			if err := storage.deleteList(&list, tx); err != nil {
 				return err
 			}
@@ -65,7 +67,7 @@ func (storage *Storage) DeleteBoard(board *Board) error {
 	}
 
 	boardBucket := tx.Bucket([]byte(BOARD_BUCKET))
-	boardBucket.Delete([]byte(board.ID))
+	boardBucket.Delete([]byte(board.Id))
 
 	if err := tx.Commit(); err != nil {
 		return err

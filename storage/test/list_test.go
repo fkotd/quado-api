@@ -8,14 +8,14 @@ import (
 
 func TestPutList(t *testing.T) {
 	storage := createTestStorage(t)
-	list := storage.NewList(storage.NewBoard().ID, "test")
+	list := storage.NewList(storage.NewBoard().Id, "test")
 
 	if err := storage.PutList(list); err != nil {
-		t.Errorf("List insertion in bucket failed: %s", list.ID)
+		t.Errorf("List insertion in bucket failed: %s", list.Id)
 	}
 	log.WithFields(log.Fields{
-		"id":      list.ID,
-		"boardId": list.BoardID,
+		"id":      list.Id,
+		"boardId": list.BoardId,
 		"title":   list.Title,
 	}).Trace("New list")
 
@@ -29,23 +29,23 @@ func TestPutList(t *testing.T) {
 
 func TestGetList(t *testing.T) {
 	storage := createTestStorage(t)
-	list := storage.NewList(storage.NewBoard().ID, "test")
+	list := storage.NewList(storage.NewBoard().Id, "test")
 
 	if err := storage.PutList(list); err != nil {
-		t.Errorf("List insertion in bucket failed: %s", list.ID)
+		t.Errorf("List insertion in bucket failed: %s", list.Id)
 	}
-	log.WithField("id", list.ID).Trace("New list")
+	log.WithField("id", list.Id).Trace("New list")
 
-	resList, err := storage.GetList(list.ID)
+	resList, err := storage.GetList(list.Id)
 	if err != nil {
-		t.Errorf("List retreiving failed: %s", list.ID)
+		t.Errorf("List retreiving failed: %s", list.Id)
 	}
-	if resList.ID != list.ID {
-		t.Errorf("List retreiving failed: %s", list.ID)
+	if resList.Id != list.Id {
+		t.Errorf("List retreiving failed: %s", list.Id)
 	}
 	log.WithFields(log.Fields{
-		"id":      resList.ID,
-		"boardId": resList.BoardID,
+		"id":      resList.Id,
+		"boardId": resList.BoardId,
 		"title":   resList.Title,
 	}).Trace("Retreiving list")
 
@@ -59,23 +59,23 @@ func TestGetList(t *testing.T) {
 
 func TestUpdateList(t *testing.T) {
 	storage := createTestStorage(t)
-	list := storage.NewList(storage.NewBoard().ID, "test")
+	list := storage.NewList(storage.NewBoard().Id, "test")
 
 	if err := storage.PutList(list); err != nil {
-		t.Errorf("List insertion in bucket failed: %s", list.ID)
+		t.Errorf("List insertion in bucket failed: %s", list.Id)
 	}
-	log.WithField("id", list.ID).Trace("New list")
+	log.WithField("id", list.Id).Trace("New list")
 
-	resList, err := storage.GetList(list.ID)
+	resList, err := storage.GetList(list.Id)
 	if err != nil {
-		t.Errorf("List retreiving failed: %s", list.ID)
+		t.Errorf("List retreiving failed: %s", list.Id)
 	}
-	if resList.ID != list.ID {
-		t.Errorf("List retreiving failed: %s", list.ID)
+	if resList.Id != list.Id {
+		t.Errorf("List retreiving failed: %s", list.Id)
 	}
 	log.WithFields(log.Fields{
-		"id":      resList.ID,
-		"boardId": resList.BoardID,
+		"id":      resList.Id,
+		"boardId": resList.BoardId,
 		"title":   resList.Title,
 	}).Trace("Retreiving list")
 
@@ -87,20 +87,20 @@ func TestUpdateList(t *testing.T) {
 	list.Title = "test_modify"
 
 	if err := storage.PutList(list); err != nil {
-		t.Errorf("List insertion in bucket failed: %s", list.ID)
+		t.Errorf("List insertion in bucket failed: %s", list.Id)
 	}
-	log.WithField("id", list.ID).Trace("Update list")
+	log.WithField("id", list.Id).Trace("Update list")
 
-	resList, err = storage.GetList(list.ID)
+	resList, err = storage.GetList(list.Id)
 	if err != nil {
-		t.Errorf("List retreiving failed: %s", list.ID)
+		t.Errorf("List retreiving failed: %s", list.Id)
 	}
-	if resList.ID != list.ID {
-		t.Errorf("List retreiving failed: %s", list.ID)
+	if resList.Id != list.Id {
+		t.Errorf("List retreiving failed: %s", list.Id)
 	}
 	log.WithFields(log.Fields{
-		"id":      resList.ID,
-		"boardId": resList.BoardID,
+		"id":      resList.Id,
+		"boardId": resList.BoardId,
 		"title":   resList.Title,
 	}).Trace("Retreiving list")
 
@@ -114,12 +114,12 @@ func TestUpdateList(t *testing.T) {
 
 func TestDeleteList(t *testing.T) {
 	storage := createTestStorage(t)
-	list := storage.NewList(storage.NewBoard().ID, "test")
+	list := storage.NewList(storage.NewBoard().Id, "test")
 
 	if err := storage.PutList(list); err != nil {
-		t.Errorf("List insertion in bucket failed: %s", list.ID)
+		t.Errorf("List insertion in bucket failed: %s", list.Id)
 	}
-	log.WithField("id", list.ID).Trace("New list")
+	log.WithField("id", list.Id).Trace("New list")
 
 	size := storage.bucketSize(LIST_BUCKET)
 	if size != 1 {
@@ -127,9 +127,9 @@ func TestDeleteList(t *testing.T) {
 	}
 
 	if err := storage.DeleteList(list); err != nil {
-		t.Errorf("List deletion failed: %s", list.ID)
+		t.Errorf("List deletion failed: %s", list.Id)
 	}
-	log.WithField("id", list.ID).Trace("Deleting list")
+	log.WithField("id", list.Id).Trace("Deleting list")
 
 	size = storage.bucketSize(LIST_BUCKET)
 	if size != 0 {
